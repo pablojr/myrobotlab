@@ -2,6 +2,7 @@ package org.myrobotlab.service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.myrobotlab.codec.CodecUtils;
@@ -14,6 +15,7 @@ import org.myrobotlab.logging.LoggerFactory;
 import org.myrobotlab.logging.LoggingFactory;
 import org.myrobotlab.programab.Response;
 import org.myrobotlab.service.config.Gpt3Config;
+import org.myrobotlab.service.config.HttpClientConfig;
 import org.myrobotlab.service.data.Utterance;
 import org.myrobotlab.service.interfaces.ResponsePublisher;
 import org.myrobotlab.service.interfaces.TextListener;
@@ -92,23 +94,21 @@ public class Gpt3 extends Service<Gpt3Config> implements TextListener, TextPubli
       }
 
       if (!c.sleeping) {
+        // avoid 0,8000000
+        String temp = String.format(Locale.US, "\t\"temperature\": %f\r\n", c.temperature);        
 
         // chat completions
         String json =        
         "{\r\n"
         + "     \"model\": \""+ c.engine +"\",\r\n"
         + "     \"messages\": [{\"role\": \"user\", \"content\": \""+ text +"\"}],\r\n"
-        + "     \"temperature\": 0.7\r\n"
+        + temp
         + "   }";
 
-//      completions
-//      String json =        
-//      "{\r\n" + "  \"model\": \"" + c.engine + "\",\r\n" + "  \"prompt\": \"" + text + "\",\r\n" + "  \"temperature\": " + c.temperature + ",\r\n" + "  \"max_tokens\": "
-//      + c.maxTokens + ",\r\n" + "  \"top_p\": 1,\r\n" + "  \"frequency_penalty\": 0,\r\n" + "  \"presence_penalty\": 0\r\n" + "}";
+        HttpClient<HttpClientConfig> http = (HttpClient) startPeer("http");
 
-
-        HttpClient http = (HttpClient) startPeer("http");
-
+        log.info("curl {} -d '{}'", c.url, json);
+        
         String msg = http.postJson(c.token, c.url, json);
 
         Map<String, Object> payload = CodecUtils.fromJson(msg, new StaticType<>() {});

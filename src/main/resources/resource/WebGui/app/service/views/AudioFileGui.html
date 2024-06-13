@@ -1,8 +1,15 @@
+    <style>
+        .active-toggle {
+            background-color: #286090; /* Blue color for active state */
+            color: white;
+        }
+    </style>
+
 <div class="col-md-6">
     <table border="1" class="table table-hover table-condensed table-striped table-bordered">
         <tr>
             <td>
-                <input class="form-control" ng-change="setSelectedFileFromTrack(inputSelectedFile)" type="text" ng-model="inputSelectedFile" name="selectedFile" id="selectedFile" ng-init="" placeholder="file"/>
+                <input class="form-control" ng-change="setSelectedFileFromTrack(selectedFile)" type="text" ng-model="selectedFile" name="selectedFile" id="selectedFile" ng-init="" placeholder="file"/>
             </td>
         </tr>
         <tr>
@@ -23,10 +30,10 @@
                 <button class="btn btn-default" ng-click="msg.setMute(!service.mute);msg.broadcastState()">
                     <span class="glyphicon glyphicon-volume-off" title="mute track"/>
                 </button>
-                <button class="btn btn-default" ng-click="msg.setVolume(service.volume - 0.01);msg.broadcastState()">
+                <button class="btn btn-default" ng-click="msg.setVolume(service.config.volume - 0.01);msg.broadcastState()">
                     <span class="glyphicon glyphicon-volume-down" title="pump up the volume"/>
                 </button>
-                <button class="btn btn-default" ng-click="msg.setVolume(service.volume + 0.01);msg.broadcastState()">
+                <button class="btn btn-default" ng-click="msg.setVolume(service.config.volume + 0.01);msg.broadcastState()">
                     <span class="glyphicon glyphicon-volume-up" title="pump up the volume"/>
                 </button>
             </td>
@@ -47,7 +54,7 @@
         </tr>
         <tr>
             <td>volume</td>
-            <td>{{service.volume.toFixed(2) * 100}}</td>
+            <td>{{service.config.volume.toFixed(2) * 100}}</td>
         </tr>
         <tr>
             <td>peak volume multiplier</td>
@@ -69,7 +76,7 @@
     <br/>
     <!--Selected playlist: {{service.currentPlaylist}}<br/>-->
     <table border="1" class="table table-hover table-condensed table-striped table-bordered">
-        <!--tr ng-repeat="(name, fileset) in service.playlists">
+        <!--tr ng-repeat="(name, fileset) in service.config.playlists">
             <td>{{name}}{{fileset}}</td>
         </tr-->
         <tr>
@@ -79,22 +86,34 @@
                 <button class="btn btn-default" ng-click="msg.addPlaylist(service.currentPlaylist, directoryName);msg.broadcastState()">Add playlist</button>
                 <div class="form-group">
                     <label>select playlist:</label>
-                    {{selectedPlaylist[0]}}
+                    {{selectedPlaylist}}
                     
-                    <select multiple class="form-control vertical-menu" ng-change="setPlaylist(name)" ng-model="selectedPlaylist" id="service.playlists" title="select your playlist">
-                        <option ng-repeat="(name, fileset) in service.playlists" ng-value="{{name}}">{{name}}</option>
+                    <select size="8" class="form-control vertical-menu" ng-change="setPlaylist(selectedPlaylist)" ng-model="selectedPlaylist" id="service.config.playlists" title="select your playlist">
+                        <option ng-repeat="(name, fileset) in service.config.playlists" ng-value="{{name}}">{{name}}</option>
                     </select>
                 </div>
                 <button class="btn btn-default" ng-click="startPlaylist()">
-                    <span class="glyphicon glyphicon-play" title="play list"/>
+                    <span class="glyphicon glyphicon-play" title="Start Play List"/>
                 </button>
                 <button class="btn btn-default" ng-click="stopPlaylist()">
-                    <span class="glyphicon glyphicon-stop" title="stop play list"/>
+                    <span class="glyphicon glyphicon-stop" title="Stop Play List"/>
                 </button>
-                <div ng-show="service.playlists" class="form-group">
+
+                <button class="btn btn-default" title="Skip" ng-click="skip()">
+                    <span class="glyphicon glyphicon-forward"></span>
+                </button>                
+                <button class="btn btn-default" ng-click="service.config.shuffle = !service.config.shuffle" 
+                        ng-class="{'active-toggle': service.config.shuffle}">
+                    <span class="glyphicon glyphicon-random" title="Shuffle Playlist"></span> 
+                </button>
+                <button class="btn btn-default" ng-click="service.config.repeat = !service.config.repeat"
+                        ng-class="{'active-toggle': service.config.repeat}">
+                    <span class="glyphicon glyphicon-refresh" title="Repeat Playlist"></span>
+                </button>
+                <div ng-show="service.config.playlists" class="form-group">
                     <label>select file:</label>
-                    <select multiple class="form-control vertical-menu" ng-model="selectedFiles" ng-change="setSelectedFileFromTrack(selectedFiles[0])" title="select your track">
-                        <option ng-repeat="(name, fileset) in service.playlists[selectedPlaylist]" ng-value="{{fileset}}">{{fileset}}</option>
+                    <select size="8" class="form-control vertical-menu" ng-model="selectedFiles" ng-change="setSelectedFileFromTrack(selectedFiles)" title="select your track">
+                        <option ng-repeat="(name, fileset) in service.config.playlists[selectedPlaylist] track by $index" ng-value="fileset">{{fileset}}</option>
                     </select>
                 </div>
             </td>

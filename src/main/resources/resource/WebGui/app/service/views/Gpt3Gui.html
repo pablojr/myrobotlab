@@ -16,8 +16,45 @@
 </div>
 <div class="row">
     <img ng-show="service.config.token" src="/connected.png"/>
-    <img ng-show="!service.config.token" src="/disconnected.png"/>
+    <img ng-show="!service.config.token" src="/disconnected.png"/>    
 </div>
+<div class="row">
+    &nbsp;
+</div>
+<div class="row">
+    <div class="col-md-4">
+    <table class="table table-striped table-hover">
+        <tr>
+            <td>url</td><td><input class="form-control" ng-model="service.config.url" /></td>
+        </tr>
+        <tr>
+            <td>model</td><td><input class="form-control" ng-model="service.config.engine" /></td>
+        </tr>
+        <tr>
+            <td>temperature</td><td><input class="form-control" ng-model="service.config.temperature" /></td>
+        </tr>
+        <tr>
+            <td>prefix</td><td><textarea rows="7" class="form-control" ng-model="service.config.prefix"></textarea></td>
+        </tr>
+        <tr>
+            <td>wake word</td><td><input type="text" class="form-control" ng-model="service.config.wakeWord" /></td>
+        </tr>
+        <tr>
+            <td>sleep word</td><td><input type="text" class="form-control" ng-model="service.config.sleepWord" /></td>
+        </tr>
+        <tr>
+            <td>api key</td><td><input type="password" class="form-control" ng-model="service.config.token" /></td>
+        </tr>
+        <tr>
+            <td>
+                <button class="btn btn-default" ng-click="saveValues()">save</button>
+            </td>
+            <td></td>
+        </tr>
+    </table> 
+</div>
+</div>
+<!--
 <div class="row">
     <form class="form-inline">
         token<br/>
@@ -25,6 +62,7 @@
         <button class="btn btn-default" ng-click="msg.setToken(service.config.token);msg.save()">set token</button>
     </form>
 </div>
+-->
 <div class="row" ng-show="service.config.token">
     <form class="form-inline">
         text<br/>
@@ -34,7 +72,7 @@
 </div>
 
 <div class="row">
-    <table class="table table-hover">
+    <table class="table table-striped table-hover">
         <tbody>
             <tr ng-repeat="e in utterances" >
                 <td>

@@ -21,6 +21,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -898,6 +899,8 @@ public class Runtime extends Service<RuntimeConfig> implements MessageListener, 
             // klunky
             Runtime.register(new Registration(runtime));
           }
+
+          runtime.locales = Locale.getDefaults();
 
           runtime.getRepo().addStatusPublisher(runtime);
           runtime.startService();
@@ -5075,6 +5078,32 @@ public class Runtime extends Service<RuntimeConfig> implements MessageListener, 
 
     if (runtime != null) {
       runtime.invoke("publishConfigList");
+      runtime.invoke("getConfigName");
+    }
+
+    return configName;
+  }
+
+  public String deleteConfig(String configName) {
+
+    File trashDir = new File(DATA_DIR + fs + "trash");
+    if (!trashDir.exists()) {
+      trashDir.mkdirs();
+    }
+
+    File configDir = new File(ROOT_CONFIG_DIR + fs + configName);
+    // Create a new directory in the trash with a timestamp to avoid name
+    // conflicts
+    File trashTargetDir = new File(trashDir, configName + "_" + System.currentTimeMillis());
+    try {
+      // Use Files.move to move the directory atomically
+      Files.move(configDir.toPath(), trashTargetDir.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      log.info("Config moved to trash: " + trashTargetDir.getAbsolutePath());
+      invoke("publishConfigList");
+    } catch (IOException e) {
+      error("Failed to move config directory to trash: " + e.getMessage());
+      return null; // Return null or throw a custom exception to indicate
+                   // failure
     }
 
     return configName;

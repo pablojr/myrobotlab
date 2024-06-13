@@ -4,10 +4,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.myrobotlab.logging.LoggerFactory;
 import org.myrobotlab.service.AudioFile;
+import org.slf4j.Logger;
 
 public class PlaylistPlayer implements Runnable {
 
+  static final Logger log = LoggerFactory.getLogger(PlaylistPlayer.class);
+  
   private transient AudioFile audioFile = null;
   private transient Thread player;
   private boolean shuffle;
@@ -21,8 +25,7 @@ public class PlaylistPlayer implements Runnable {
   }
 
   @Override
-  public void run() {
-
+  public void run() {    
     while (!done) {
 
       List<String> list = playlist;
@@ -34,6 +37,7 @@ public class PlaylistPlayer implements Runnable {
         audioFile.play(list.get(i), true, null, track);
       }
       if (!repeat) {
+        log.info("finished playing playlist");
         done = true;
       }
     }
@@ -49,9 +53,24 @@ public class PlaylistPlayer implements Runnable {
 
   public synchronized void stop() {
     done = true;
+    audioFile.stop();
+    if (player != null) {
+      player.interrupt();
+    }
+  }
+  
+  public synchronized void skip() {
+    if (player != null) {
+      audioFile.stop();
+    }
   }
 
+
   public synchronized void start(List<String> playlist, boolean shuffle, boolean repeat, String track) {
+    
+    audioFile.getConfig().repeat = repeat;
+    audioFile.getConfig().shuffle = shuffle;
+    
     if (player != null) {
       audioFile.warn("playlist player already playing a list - stop before starting a new playlist");
       return;

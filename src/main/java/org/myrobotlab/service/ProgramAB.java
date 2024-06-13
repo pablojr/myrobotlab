@@ -271,8 +271,15 @@ public class ProgramAB extends Service<ProgramABConfig>
     // update the current session if we want to change which bot is at
     // attention.
     if (updateCurrentSession) {
+      
+      boolean sessionChanged =  (!userName.equals(config.currentUserName) || !botName.equals(config.currentBotName));
+      
       setCurrentUserName(userName);
       setCurrentBotName(botName);
+      
+      if (sessionChanged) {
+        invoke("publishSession", getSessionKey(userName, botName));
+      }
     }
 
     // Get the actual bots aiml based response for this session
@@ -711,11 +718,24 @@ public class ProgramAB extends Service<ProgramABConfig>
     }
 
     session = new Session(this, userName, botInfo);
-    sessions.put(getSessionKey(userName, botName), session);
+    String sessionKey = getSessionKey(userName, botName);
+    sessions.put(sessionKey, session);
 
     log.info("Started session for bot botName:{} , userName:{}", botName, userName);
     setCurrentSession(userName, botName);
+    
+    invoke("publishSession", sessionKey);
+    
     return session;
+  }
+  
+  /**
+   * When a new session is started this event is published with the session's key
+   * @param sessionKey of new Session
+   * @return sessionKey
+   */
+  public String publishSession(String sessionKey) {
+    return sessionKey;
   }
 
   /**
@@ -793,8 +813,6 @@ public class ProgramAB extends Service<ProgramABConfig>
 
       bots.put(botInfo.name, botInfo);
       botInfo.img = getBotImage(botInfo.name);
-
-      broadcastState();
     } else {
       error("invalid bot path %s - a bot must be a directory with a subdirectory named \"aiml\"", path);
       return null;
@@ -1095,10 +1113,11 @@ public class ProgramAB extends Service<ProgramABConfig>
   public ProgramABConfig apply(ProgramABConfig c) {
     super.apply(c);
     if (c.bots != null && c.bots.size() > 0) {
-      // bots.clear();
+      bots.clear();
       for (String botPath : c.bots) {
         addBotPath(botPath);
       }
+      broadcastState();
     }
 
     if (c.currentUserName != null) {
@@ -1442,4 +1461,24 @@ public class ProgramAB extends Service<ProgramABConfig>
     return oobProcessor;
   }
 
+  public Object getBotProperty(String key) {
+    BotInfo botInfo = getBotInfo();
+    if (botInfo != null) {
+      org.alicebot.ab.Properties props = botInfo.getBotProperties();
+      if (props != null) {
+        return props.get(key);
+      }
+    }
+    return null;
+  }
+  
+  public Object getBotProperties() {
+    BotInfo botInfo = getBotInfo();
+    if (botInfo != null) {
+      org.alicebot.ab.Properties props = botInfo.getBotProperties();
+      return props;
+    }
+    return null;
+  }
+  
 }

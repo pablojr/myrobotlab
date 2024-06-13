@@ -36,6 +36,7 @@ import org.myrobotlab.service.abstracts.AbstractSpeechSynthesis;
 import org.myrobotlab.service.config.InMoov2Config;
 import org.myrobotlab.service.config.OpenCVConfig;
 import org.myrobotlab.service.config.SpeechSynthesisConfig;
+import org.myrobotlab.service.data.Classification;
 import org.myrobotlab.service.data.JoystickData;
 import org.myrobotlab.service.data.Locale;
 import org.myrobotlab.service.interfaces.IKJointAngleListener;
@@ -288,7 +289,9 @@ public class InMoov2 extends Service<InMoov2Config>
         setLocale(getSupportedLocale(Runtime.getInstance().getLocale().toString()));
       }
 
-      execScript();
+      if (c.execScript) {
+        execScript();
+      }
 
       loadAppsScripts();
 
@@ -1096,10 +1099,20 @@ public class InMoov2 extends Service<InMoov2Config>
     errors.addAll(log);
   }
 
+  @Deprecated /* use onConfigFinished */
   public void onFinishedConfig(String configName) {
     log.info("onFinishedConfig");
-    // invoke("publishEvent", "configFinished");
     invoke("publishConfigFinished", configName);
+  }
+
+  public void onConfigFinished(String configName) {
+    log.info("onConfigFinished");
+    invoke("publishConfigFinished", configName);
+  }
+
+  public void onConfigStarted(String configName) {
+    log.info("onConfigStarted");
+    invoke("publishConfigStarted", configName);
   }
 
   public void onGestureStatus(Status status) {
@@ -1405,7 +1418,7 @@ public class InMoov2 extends Service<InMoov2Config>
    */
   public void processMessage(String method, Object... data) {
     // User processing should not occur until after boot has completed
-    if (!state.equals("boot")) {
+    if (!state.equals("boot") && config.execScript) {
       // FIXME - this needs to be in config
       // FIXME - change peer name to "processor"
       // String processor = getPeerName("py4j");
@@ -1475,7 +1488,9 @@ public class InMoov2 extends Service<InMoov2Config>
   }
 
   public String publishHeartbeat() {
-    invoke("publishFlash", "heartbeat");
+    if (config.heartbeatFlash) {
+      invoke("publishFlash", "heartbeat");
+    }
     return getName();
   }
 
@@ -1720,7 +1735,7 @@ public class InMoov2 extends Service<InMoov2Config>
   public void setArmSpeed(String which, Double bicep, Double rotate, Double shoulder, Double omoplate) {
     InMoov2Arm arm = getArm(which);
     if (arm == null) {
-      warn("%s arm not started", which);
+      info("%s arm not started", which);
       return;
     }
     arm.setSpeed(bicep, rotate, shoulder, omoplate);
@@ -1754,7 +1769,7 @@ public class InMoov2 extends Service<InMoov2Config>
   public void setHandSpeed(String which, Double thumb, Double index, Double majeure, Double ringFinger, Double pinky, Double wrist) {
     InMoov2Hand hand = getHand(which);
     if (hand == null) {
-      warn("%s hand not started", which);
+      info("%s hand not started", which);
       return;
     }
     hand.setSpeed(thumb, index, majeure, ringFinger, pinky, wrist);
@@ -2266,7 +2281,7 @@ public class InMoov2 extends Service<InMoov2Config>
     Platform platform = Runtime.getPlatform();
     setPredicate("system version", platform.getVersion());
     // ERROR buffer !!!
-    invoke("publishEvent", "systemCheckFinished");
+    // invoke("publishEvent", "systemCheckFinished");
   }
 
   // FIXME - if this is really desired it will drive local references for all
@@ -2279,6 +2294,11 @@ public class InMoov2 extends Service<InMoov2Config>
     sendToPeer("rightArm", "waitTargetPos");
     sendToPeer("leftArm", "waitTargetPos");
     sendToPeer("torso", "waitTargetPos");
+  }
+  
+  public Map publishClassification(Map<String, Object> c) {
+    // log.info(c);    
+    return c;
   }
 
 }

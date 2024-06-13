@@ -102,7 +102,7 @@ public class InMoov2Config extends ServiceConfig {
    * data/InMoov2/sounds/pir-activated.mp3 sound located in
    * data/InMoov2/sounds/pir-deactivated.mp3
    */
-  public boolean pirPlaySounds = true;
+  public boolean pirPlaySounds = false;
 
   public boolean pirWakeUp = true;
 
@@ -111,7 +111,10 @@ public class InMoov2Config extends ServiceConfig {
    */
   public boolean reportOnBoot = true;
 
-  public boolean robotCanMoveHeadWhileSpeaking = true;
+  /**
+   * script related config - idea is good, but shouldn't be implemented with global scripts
+   */
+  public boolean robotCanMoveHeadWhileSpeaking = false;
 
   /**
    * startup and shutdown will pause inmoov - set the speed to this value then
@@ -153,6 +156,11 @@ public class InMoov2Config extends ServiceConfig {
   public String unlockInsult = "forgive me";
 
   public boolean virtual = false;
+  
+  /**
+   * Prevent InMoov2.py from executing until ready for release
+   */
+  public boolean execScript = false;
 
   public InMoov2Config() {
   }
@@ -172,7 +180,7 @@ public class InMoov2Config extends ServiceConfig {
     addDefaultPeerConfig(plan, name, "eyeTracking", "Tracking", false);
     addDefaultPeerConfig(plan, name, "fsm", "FiniteStateMachine", false);
     addDefaultGlobalConfig(plan, "log", "log", "Log", true);
-    addDefaultPeerConfig(plan, name, "gpt3", "Gpt3", false);
+    addDefaultPeerConfig(plan, name, "llm", "LLM", false);
     addDefaultPeerConfig(plan, name, "head", "InMoov2Head", false);
     addDefaultPeerConfig(plan, name, "headTracking", "Tracking", false);
     addDefaultPeerConfig(plan, name, "htmlFilter", "HtmlFilter", true);
@@ -282,8 +290,8 @@ public class InMoov2Config extends ServiceConfig {
     chatBot.listeners.add(new Listener("publishText", getPeerName("htmlFilter"), "onText"));
     chatBot.listeners.add(new Listener("publishSession", name));
 
-    Gpt3Config gpt3 = (Gpt3Config) plan.get(getPeerName("gpt3"));
-    gpt3.listeners.add(new Listener("publishText", name + ".htmlFilter", "onText"));
+    LLMConfig llm = (LLMConfig) plan.get(getPeerName("llm"));
+    llm.listeners.add(new Listener("publishText", name + ".htmlFilter", "onText"));
 
     HtmlFilterConfig htmlFilter = (HtmlFilterConfig) plan.get(getPeerName("htmlFilter"));
     htmlFilter.listeners.add(new Listener("publishText", name + ".mouth", "onText"));
@@ -299,8 +307,6 @@ public class InMoov2Config extends ServiceConfig {
     WebkitSpeechRecognitionConfig ear = (WebkitSpeechRecognitionConfig) plan.get(getPeerName("ear"));
     ear.listeners.add(new Listener("publishText", name + ".chatBot", "onText"));
     ear.listening = true;
-    // remove, should only need ServiceConfig.listeners
-    ear.textListeners = new String[] { name + ".chatBot" };
 
     JMonkeyEngineConfig simulator = (JMonkeyEngineConfig) plan.get(getPeerName("simulator"));
 
@@ -522,9 +528,6 @@ public class InMoov2Config extends ServiceConfig {
     log.listeners.add(new Listener("publishErrors", name));
     // service --to--> InMoov2
 
-    // mouth_audioFile.listeners.add(new Listener("publishAudioEnd", name));
-    // mouth_audioFile.listeners.add(new Listener("publishAudioStart", name));
-
     // InMoov2 --to--> service
     listeners.add(new Listener("publishEvent", getPeerName("chatBot"), "getResponse"));
     listeners.add(new Listener("publishFlash", getPeerName("neoPixel")));
@@ -546,11 +549,6 @@ public class InMoov2Config extends ServiceConfig {
     listeners.add(new Listener("publishMoveTorso", getPeerName("torso"), "onMove"));
 
     // service --to--> InMoov2
-    AudioFileConfig mouth_audioFile = (AudioFileConfig) plan.get(getPeerName("mouth.audioFile"));
-    mouth_audioFile.listeners.add(new Listener("publishPeak", name));
-
-    htmlFilter.listeners.add(new Listener("publishText", name));
-    
     htmlFilter.listeners.add(new Listener("publishText", name));
 
     OakDConfig oakd = (OakDConfig) plan.get(getPeerName("oakd"));
@@ -559,6 +557,15 @@ public class InMoov2Config extends ServiceConfig {
 
     webxr.listeners.add(new Listener("publishJointAngles", name));
 
+    // service --to--> service
+    AudioFileConfig mouth_audioFile = (AudioFileConfig) plan.get(getPeerName("mouth.audioFile"));
+    mouth_audioFile.listeners.add(new Listener("publishPeak", name));
+    mouth_audioFile.listeners.add(new Listener("publishPeak", name + ".head.jaw", "moveTo"));
+    mouth_audioFile.peakDelayMs = 150L;
+    mouth_audioFile.peakMultiplier = 200.0;
+    mouth_audioFile.peakSampleInterval = 2.0;
+    mouth_audioFile.publishPeakResetDelayMs = 100L;
+        
     // mouth_audioFile.listeners.add(new Listener("publishAudioEnd", name));
     // mouth_audioFile.listeners.add(new Listener("publishAudioStart", name));
 
